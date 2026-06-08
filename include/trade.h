@@ -25,4 +25,4 @@ public:
 	Trade(Id buy_order_id, Id sell_order_id, Share shares);
 };
 
-#endif TRADE_H
+#endif //TRADE_H
