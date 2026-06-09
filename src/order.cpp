@@ -9,15 +9,14 @@ Order::Order(const Share shares, const Price price, const ORDER_TYPE_T type, con
 	{}
 
 bool Order::decrementShares(const uint64_t shares) {
-	if (shares > this->remaining_shares) {
+	if (shares > this->remaining_shares) [[unlikely]]
 		return false;
-	}
 	this->remaining_shares -= shares;;
 	return true;
 }
 
 bool Order::cancel() {
-	if (status == ORDER_STATE_T::OPEN || status == ORDER_STATE_T::CANCELLED) {
+	if (status == ORDER_STATE_T::OPEN || status == ORDER_STATE_T::CANCELLED || status == ORDER_STATE_T::PARTIAL) {
 		this->status = ORDER_STATE_T::CANCELLED;
 		return true;
 	}

@@ -25,7 +25,6 @@ enum class ORDER_STATE_T {
 	PARTIAL,
 	FILLED,
 	CANCELLED,
-	REJECTED
 };
 
 
