@@ -32,7 +32,7 @@ class OrderBook {
 	std::map<Price, std::list<Order>> bids;
 
 public:
-	OrderBook(std::string ticker);
+	explicit OrderBook(std::string ticker);
 
 	/*
 	 * Place a new order.
@@ -49,7 +49,32 @@ public:
 	 */
 	bool placeOrder(Price price, Share shares, ORDER_TYPE_T type, ORDER_SIDE_T side);
 
-	void cancelOrder(Id order_id);
+	/*
+	 * Cancel a resting order.
+	 * If an order exists in the "resting_orders" map and either the "asks" or "bids" map and has status "OPEN" or
+	 * "PARTIAL", it can be cancelled. Else, the order cannot be cancelled.
+	 *
+	 * @param order_id: the Id of the order that the caller wants to cancel.
+	 *
+	 * @return: false if an order with the given Id cannot be found, or if the order is not cancellable (see above
+	 * requirements). Otherwise, returns true.
+	 */
+	bool cancelOrder(Id order_id);
+
+	/*
+	 * Query an existing resting or historical order for up-to-date information.
+	 * The Order object reference returned should not be kept long-term as the underlying object may be changed by
+	 * other operations done on the OrderBook after the function call.
+	 *
+	 * @param order_id: the Id of the order that the caller wants to cancel.
+	 *
+	 * @throws <insert exception>: if no Order of that Id can be found.
+	 *
+	 * @return: a const reference to the Order object if found, or throws <insert_exception> otherwise.
+	 */
+	[[nodiscard]] const Order& getOrder(Id order_id) const;
+
+
 };
 
 #endif //ORDER_BOOK_H
