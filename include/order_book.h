@@ -9,6 +9,8 @@
 #include <unordered_map>
 #include <map>
 #include <list>
+#include <optional>
+#include <expected>
 #include "global.h"
 #include "order.h"
 
@@ -36,18 +38,21 @@ public:
 
 	/*
 	 * Place a new order.
+	 * If the combination of input values is invalid, returns std::unexpected.
 	 * First, Order object is constructed here and is temporarily owned here before moving to historical_orders or resting_orders.
 	 * Second, we try filling the order immediately. If order is completed, add directly to historical_orders. If
-	 * order cannot be completed and can rest, add to a price level list. Else, cancel remainder.
+	 * order cannot be completed and can rest, add to a price level list. Else, cancel remainder and add order to historical_orders.
 	 *
 	 * @param price: the price the order is looking for. Only relevant for LIMIT orders. Ignored for MARKET orders.
 	 * @param shares: the number of shares the caller wants to buy or sell
 	 * @param type: either a MARKET order or a LIMIT order
 	 * @param side: either a SELL order or a BUY order
 	 *
-	 * @return: If the order cannot rest or be filled, return false. Otherwise, return true.
+	 * @return: If the order is invalid or cannot rest or be partially filled, return a std::unexpected<PLACE_ERROR_CODE>. Otherwise, return an
+	 * ORDER_STATE_TYPE_T that describes the state of the Order after the function completes. Valid values include "CANCELLED", "PARTIAL", "FILLED".
 	 */
-	bool placeOrder(Price price, Share shares, ORDER_TYPE_T type, ORDER_SIDE_T side);
+	[[nodiscard]] std::expected<ORDER_STATE_T, PLACE_ORDER_ERROR_CODE> placeOrder(ORDER_SIDE_T side, ORDER_TYPE_T type, Share shares,
+	std::optional<Price> price);
 
 	/*
 	 * Cancel a resting order.
@@ -68,11 +73,9 @@ public:
 	 *
 	 * @param order_id: the Id of the order that the caller wants to cancel.
 	 *
-	 * @throws std::invalid_argument: if no Order of that Id can be found.
-	 *
 	 * @return: a const reference to the Order object if found, or throws std::invalid_argument otherwise.
 	 */
-	[[nodiscard]] const Order& getOrder(Id order_id) const;
+	[[nodiscard]] std::optional<const Order&> getOrder(Id order_id) const;
 };
 
 #endif //ORDER_BOOK_H
