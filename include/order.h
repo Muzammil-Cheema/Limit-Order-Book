@@ -19,17 +19,18 @@ class Order {
 	std::chrono::system_clock::time_point arrival_time_system;
 	std::chrono::system_clock::time_point fill_time_system;
 
+	ORDER_SIDE_T side;
+	ORDER_TYPE_T type;
+
 	Share original_shares;
 	Share remaining_shares;
-	Price price;
-
-	ORDER_TYPE_T type;
-	ORDER_SIDE_T side;
+	std::optional<Price> price;
 
 	ORDER_STATE_T status = ORDER_STATE_T::INITIAL;
 
 public:
-	Order(Share shares, Price price, ORDER_TYPE_T type, ORDER_SIDE_T side);
+	Order(ORDER_SIDE_T side, ORDER_TYPE_T type, Share shares, Price price);
+	Order(ORDER_SIDE_T side, ORDER_TYPE_T type, Share shares);
 
 	/*
 	 * Decrement remaining shares from order and updates status.
