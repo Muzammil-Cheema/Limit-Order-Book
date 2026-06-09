@@ -27,6 +27,11 @@ enum class ORDER_STATE_T {
 	CANCELLED,
 };
 
+enum class PLACE_ORDER_ERROR_CODE {
+	INVALID_INPUT,
+	NO_MATCHING_ORDER
+};
+
 
 
 #endif //GLOBAL_H
