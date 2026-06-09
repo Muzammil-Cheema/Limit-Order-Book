@@ -68,13 +68,11 @@ public:
 	 *
 	 * @param order_id: the Id of the order that the caller wants to cancel.
 	 *
-	 * @throws <insert exception>: if no Order of that Id can be found.
+	 * @throws std::invalid_argument: if no Order of that Id can be found.
 	 *
-	 * @return: a const reference to the Order object if found, or throws <insert_exception> otherwise.
+	 * @return: a const reference to the Order object if found, or throws std::invalid_argument otherwise.
 	 */
 	[[nodiscard]] const Order& getOrder(Id order_id) const;
-
-
 };
 
 #endif //ORDER_BOOK_H

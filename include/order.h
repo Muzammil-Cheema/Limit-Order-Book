@@ -62,6 +62,7 @@ public:
 	 * Run when Order is filled and removed from OrderBook
 	 */
 	void updateFillTime();
+
 };
 
 #endif //ORDER_H

@@ -4,9 +4,8 @@
 
 #include "order.h"
 
-Order::Order(const Share shares, const Price price, const ORDER_TYPE_T type, const ORDER_SIDE_T side)
-	: original_shares(shares), remaining_shares(shares), price(price), type(type), side(side)
-	{}
+Order::Order(const Share shares, const Price price, const ORDER_TYPE_T type, const ORDER_SIDE_T side) :
+	original_shares(shares), remaining_shares(shares), price(price), type(type), side(side) {}
 
 bool Order::decrementShares(const uint64_t shares) {
 	if (shares > this->remaining_shares) [[unlikely]]
