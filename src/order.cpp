@@ -7,9 +7,16 @@
 Order::Order( const ORDER_SIDE_T side, const ORDER_TYPE_T type, const Share shares, const Price price) :
 	 side(side), type(type), original_shares(shares), remaining_shares(shares), price(price) {}
 
- Order::Order(const ORDER_SIDE_T side, const ORDER_TYPE_T type, const Share shares) :
+Order::Order(const ORDER_SIDE_T side, const ORDER_TYPE_T type, const Share shares) :
 	side(side), type(type), original_shares(shares), remaining_shares(shares) {}
 
+ORDER_SIDE_T Order::get_side() const {
+	return side;
+}
+
+ORDER_TYPE_T Order::get_type() const {
+	return type;
+}
 
 bool Order::decrementShares(const uint64_t shares) {
 	if (shares > this->remaining_shares) [[unlikely]]

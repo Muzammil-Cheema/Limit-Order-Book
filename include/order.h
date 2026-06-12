@@ -32,6 +32,9 @@ public:
 	Order(ORDER_SIDE_T side, ORDER_TYPE_T type, Share shares, Price price);
 	Order(ORDER_SIDE_T side, ORDER_TYPE_T type, Share shares);
 
+	[[nodiscard]] ORDER_SIDE_T get_side() const;
+	[[nodiscard]] ORDER_TYPE_T get_type() const;
+
 	/*
 	 * Decrement remaining shares from order and updates status.
 	 *
