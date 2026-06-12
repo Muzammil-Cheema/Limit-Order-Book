@@ -33,6 +33,22 @@ class OrderBook {
 	std::map<Price, std::list<Order>> asks;
 	std::map<Price, std::list<Order>> bids;
 
+	/*
+	 * Determine which map to traverse, and which price level to observe, modify, or create, based on the order argument.
+	 *
+	 * @param order: the new Order object that we want to fill or rest.
+	 *
+	 * @return: optionally return an iterator to the first matching order from the <asks> or <bids> map if any match
+	 * is found, or std::nullopt if no matches are found.
+	 *
+	 * Note: for MARKET orders, a match for an incoming SELL is the highest BUY and for BUY orders is the lowest SELL.
+	 * For LIMIT orders, a match is an order on the opposite side and at a price less than or equal to the incoming
+	 * for a new BUY order or a price greater than or equal to the incoming for a SELL. If no match is found for
+	 * MARKET orders, they are unfilled. For LIMIT orders that are partially filled or unfilled, they rest in the
+	 * corresponding map and price level list.
+	 */
+	std::optional<std::list<Order>::iterator> find_match_market(Order& order);
+
 public:
 	explicit OrderBook(std::string ticker);
 
@@ -48,10 +64,10 @@ public:
 	 * @param type: either a MARKET order or a LIMIT order
 	 * @param side: either a SELL order or a BUY order
 	 *
-	 * @return: If the order is invalid or cannot rest or be partially filled, return a std::unexpected<PLACE_ERROR_CODE>. Otherwise, return an
-	 * ORDER_STATE_TYPE_T that describes the state of the Order after the function completes. Valid values include "CANCELLED", "PARTIAL", "FILLED".
+	 * @return: If the order is invalid or cannot rest or be partially filled, return a std::unexpected<ORDER_BOOK_ERROR_CODE>. Otherwise, return an
+	 * ORDER_STATE_T that describes the state of the Order after the function completes. Valid values include "CANCELLED", "PARTIAL", "FILLED".
 	 */
-	[[nodiscard]] std::expected<ORDER_STATE_T, PLACE_ORDER_ERROR_CODE> placeOrder(ORDER_SIDE_T side, ORDER_TYPE_T type, Share shares,
+	[[nodiscard]] std::expected<ORDER_STATE_T, ORDER_BOOK_ERROR_CODE> placeOrder(ORDER_SIDE_T side, ORDER_TYPE_T type, Share shares,
 	std::optional<Price> price);
 
 	/*
