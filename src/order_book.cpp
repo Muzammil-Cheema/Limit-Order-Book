@@ -10,12 +10,26 @@
 // ===================== HELPERS =============================
 // ===========================================================
 
-std::optional<std::list<Order>::iterator> OrderBook::find_match_market(Order& order) {
-	// Assume MARKET BUY for now
-	auto& map_ref = order.get_side() == ORDER_SIDE_T::BUY ? asks : bids;
-	if (map_ref.empty())	// If no orders of opposite side exist.
-		return std::nullopt
 
+template <typename TPriceLevelMap>
+std::expected<std::list<Order>::iterator, ORDER_BOOK_ERROR_CODE> OrderBook::find_match(const Order& order,
+TPriceLevelMap& map)
+{
+	if (map.empty())
+		return std::unexpected(ORDER_BOOK_ERROR_CODE::NO_MATCHING_ORDER);
+
+	if (order.get_type() == ORDER_TYPE_T::MARKET)
+		return map.begin()->second.begin();
+
+	if (order.get_type() == ORDER_TYPE_T::LIMIT) {
+		if ( (order.get_side() == ORDER_SIDE_T::BUY && map.begin()->first <= order.get_price()) ||
+			(order.get_side() == ORDER_SIDE_T::SELL && map.begin()->first >= order.get_price()) )
+			return map.begin()->second.begin();
+
+		return std::unexpected(ORDER_BOOK_ERROR_CODE::NO_MATCHING_ORDER);
+	}
+
+	return std::unexpected(ORDER_BOOK_ERROR_CODE::UNKNOWN_ERROR);
 }
 
 // ===========================================================

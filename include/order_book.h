@@ -29,17 +29,31 @@ class OrderBook {
 	 */
 	std::unordered_map<Id, Order> historical_orders;
 
-	// Map buy and sell orders separately. Map price level to a list of orders at that price level in ascending arrival order.
-	std::map<Price, std::list<Order>> asks;
-	std::map<Price, std::list<Order>> bids;
+	/* Map buy and sell orders separately. Map price level to a list of orders at that price level in ascending arrival order.
+	 * We make the assumption that there no values (lists) are empty. If the last element from a list is removed, then we must remove that key
+	 * value pair from the map as well. Therefore, no keys mapping to empty lists exists either. We guarantee that a valid state of the map is when
+	 * each price level maps to a non-empty list of orders or the entire map is empty and has no key, value pairs. Therefore, checks for list emptiness will be
+	 * avoided in function implementations, while checks for map emptiness are still necessary.
+	 */
+	std::map<Price, std::list<Order>, std::less<>> asks;
+
+	/* Map buy and sell orders separately. Map price level to a list of orders at that price level in ascending arrival order.
+	 * We make the assumption that there no values (lists) are empty. If the last element from a list is removed, then we must remove that key
+	 * value pair from the map as well. Therefore, no keys mapping to empty lists exists either. We guarantee that a valid state of the map is when
+	 * each price level maps to a non-empty list of orders or the entire map is empty and has no key, value pairs. Therefore, checks for list emptiness will be
+	 * avoided in function implementations, while checks for map emptiness are still necessary.
+	 */
+	std::map<Price, std::list<Order>, std::greater<>> bids;
 
 	/*
-	 * Determine which map to traverse, and which price level to observe, modify, or create, based on the order argument.
+	 * Internal helper used to find the first order match, if one exists, and return an iterator to it.
 	 *
 	 * @param order: the new Order object that we want to fill or rest.
+	 * @param map: the map that we must traverse, either <asks> or <bids>. <asks> should be passed in for BUY orders and <bids> should be passed
+	 * for SELL orders. Valid pairs are checked within the function. This explicit passing is meant to support the function template.
 	 *
-	 * @return: optionally return an iterator to the first matching order from the <asks> or <bids> map if any match
-	 * is found, or std::nullopt if no matches are found.
+	 * @return: return an iterator to the first matching order from the <asks> or <bids> map if any match is found as the expected type. For
+	 * unexpected returns, return a corresponding ORDER_BOOK_ERROR_CODE.
 	 *
 	 * Note: for MARKET orders, a match for an incoming SELL is the highest BUY and for BUY orders is the lowest SELL.
 	 * For LIMIT orders, a match is an order on the opposite side and at a price less than or equal to the incoming
@@ -47,7 +61,8 @@ class OrderBook {
 	 * MARKET orders, they are unfilled. For LIMIT orders that are partially filled or unfilled, they rest in the
 	 * corresponding map and price level list.
 	 */
-	std::optional<std::list<Order>::iterator> find_match_market(Order& order);
+	template <typename TPriceLevelMap>
+	std::expected<std::list<Order>::iterator, ORDER_BOOK_ERROR_CODE> find_match(const Order& order, TPriceLevelMap& map);
 
 public:
 	explicit OrderBook(std::string ticker);
@@ -68,7 +83,7 @@ public:
 	 * ORDER_STATE_T that describes the state of the Order after the function completes. Valid values include "CANCELLED", "PARTIAL", "FILLED".
 	 */
 	[[nodiscard]] std::expected<ORDER_STATE_T, ORDER_BOOK_ERROR_CODE> placeOrder(ORDER_SIDE_T side, ORDER_TYPE_T type, Share shares,
-	std::optional<Price> price);
+	std::optional<Price> price = std::nullopt);
 
 	/*
 	 * Cancel a resting order.
