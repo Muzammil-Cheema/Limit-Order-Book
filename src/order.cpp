@@ -4,6 +4,8 @@
 
 #include "order.h"
 
+// Order::Order() : side(), type(), original_shares(0), remaining_shares(0) {};
+
 Order::Order( const ORDER_SIDE_T side, const ORDER_TYPE_T type, const Share shares, const Price price) :
 	 side(side), type(type), original_shares(shares), remaining_shares(shares), price(price) {}
 
@@ -16,6 +18,18 @@ ORDER_SIDE_T Order::get_side() const {
 
 ORDER_TYPE_T Order::get_type() const {
 	return type;
+}
+
+Share Order::get_original_shares() const {
+	return original_shares;
+}
+
+Share Order::get_remaining_shares() const {
+	return remaining_shares;
+}
+
+Price Order::get_price() const {
+	return price.value();
 }
 
 bool Order::decrementShares(const uint64_t shares) {
