@@ -12,6 +12,10 @@ Order::Order( const ORDER_SIDE_T side, const ORDER_TYPE_T type, const Share shar
 Order::Order(const ORDER_SIDE_T side, const ORDER_TYPE_T type, const Share shares) :
 	side(side), type(type), original_shares(shares), remaining_shares(shares) {}
 
+Id Order::get_id() const {
+	return id;
+}
+
 ORDER_SIDE_T Order::get_side() const {
 	return side;
 }
@@ -32,10 +36,19 @@ Price Order::get_price() const {
 	return price.value();
 }
 
+ORDER_STATE_T Order::get_status() const {
+	return status;
+}
+
 bool Order::decrementShares(const uint64_t shares) {
-	if (shares > this->remaining_shares) [[unlikely]]
+	if (shares > remaining_shares) [[unlikely]]
 		return false;
-	this->remaining_shares -= shares;;
+
+	remaining_shares -= shares;
+	if (remaining_shares == 0)
+		status = ORDER_STATE_T::FILLED;
+	else
+		status = ORDER_STATE_T::PARTIAL;
 	return true;
 }
 

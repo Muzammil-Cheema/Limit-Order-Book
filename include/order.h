@@ -26,18 +26,20 @@ class Order {
 	Share remaining_shares;
 	std::optional<Price> price;
 
-	ORDER_STATE_T status = ORDER_STATE_T::INITIAL;
+	ORDER_STATE_T status = ORDER_STATE_T::OPEN;
 
 public:
 	// Order();
 	Order(ORDER_SIDE_T side, ORDER_TYPE_T type, Share shares, Price price);
 	Order(ORDER_SIDE_T side, ORDER_TYPE_T type, Share shares);
 
+	[[nodiscard]] Id get_id() const;
 	[[nodiscard]] ORDER_SIDE_T get_side() const;
 	[[nodiscard]] ORDER_TYPE_T get_type() const;
 	[[nodiscard]] Share get_original_shares() const;
 	[[nodiscard]] Share get_remaining_shares() const;
 	[[nodiscard]] Price get_price() const;
+	[[nodiscard]] ORDER_STATE_T get_status() const;
 
 	/*
 	 * Decrement remaining shares from order and updates status.
