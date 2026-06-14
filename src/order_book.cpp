@@ -2,19 +2,17 @@
 // Created by Muzammil Cheema on 6/2/26.
 //
 
-#include <optional>
-#include <expected>
 #include "order_book.h"
+#include <expected>
+#include <optional>
 
 // ===========================================================
 // ===================== HELPERS =============================
 // ===========================================================
 
-
 template <typename TPriceLevelMap>
 std::expected<std::list<Order>::iterator, ORDER_BOOK_ERROR_CODE> OrderBook::find_match(const Order& order,
-TPriceLevelMap& map)
-{
+TPriceLevelMap& map) {
 	if (map.empty())
 		return std::unexpected(ORDER_BOOK_ERROR_CODE::NO_MATCHING_ORDER);
 
@@ -32,6 +30,30 @@ TPriceLevelMap& map)
 	return std::unexpected(ORDER_BOOK_ERROR_CODE::UNKNOWN_ERROR);
 }
 
+Trade fill_order(Order &order, std::list<Order>::iterator &it) {
+	const Share trade_shares = order.get_remaining_shares() > it->get_remaining_shares() ? it->get_remaining_shares() : order.get_remaining_shares();
+	const Price trade_price = it->get_price();
+
+	order.decrementShares(trade_shares);
+	it->decrementShares(trade_shares);
+
+	if (order.get_status() == ORDER_STATE_T::FILLED) {
+		//TODO move completed order into historical orders using new static private helper
+	}
+
+	return {
+		order.get_side() == ORDER_SIDE_T::BUY ? order.get_id(): it->get_id(),
+		order.get_side() == ORDER_SIDE_T::SELL ? order.get_id(): it->get_id(),
+		trade_shares,
+		trade_price
+	};
+}
+
+void OrderBook::move_completed_order(Order &order) {
+	//TODO implement moving for non-resting order
+}
+
+
 // ===========================================================
 // ======================= API ===============================
 // ===========================================================
@@ -47,11 +69,17 @@ type, const Share shares, const std::optional<Price> price) {
 
 	if (type == ORDER_TYPE_T::MARKET) {
 		Order order(side, type, shares);
+		auto res = find_match(order, order.get_side() == ORDER_SIDE_T::BUY ? asks : bids);
+		if (!res)
+			return std::unexpected(res.error());
 
-		//TODO Use iterator to traverse over correct map and price level
+
+
+		//TODO Iterator is returned as *res. Use iterator to start filling the order.
 	}
 	else if (type == ORDER_TYPE_T::LIMIT) {
 		Order order(side, type, shares, price.value());
+		auto res = find_match(order, order.get_side() == ORDER_SIDE_T::BUY ? asks : bids);
 
 		//TODO Use iterator to traverse over correct map and price level
 	}

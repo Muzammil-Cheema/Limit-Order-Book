@@ -5,14 +5,15 @@
 #ifndef ORDER_BOOK_H
 #define ORDER_BOOK_H
 
+#include <expected>
+#include <list>
+#include <map>
+#include <optional>
 #include <string>
 #include <unordered_map>
-#include <map>
-#include <list>
-#include <optional>
-#include <expected>
 #include "global.h"
 #include "order.h"
+#include "trade.h"
 
 class OrderBook {
 	std::string ticker;
@@ -62,7 +63,29 @@ class OrderBook {
 	 * corresponding map and price level list.
 	 */
 	template <typename TPriceLevelMap>
-	std::expected<std::list<Order>::iterator, ORDER_BOOK_ERROR_CODE> find_match(const Order& order, TPriceLevelMap& map);
+	static std::expected<std::list<Order>::iterator, ORDER_BOOK_ERROR_CODE> find_match(const Order& order,
+	TPriceLevelMap& map);
+
+	/* When a matching order is found (iterator), this function is called to update the incoming order and the
+	 * resting order by filling one or both of the orders. A Trade object representing this transaction is created and returned.
+	 * For orders that now have no shares remaining, they are removed from the <asks> or <bids> maps and ownership is moved to <historical_orders> using move_completed_order().
+	 *
+	 * @param order: the incoming order that we are processing.
+	 * @param it: a reference to the iterator that points to a resting order in one of the price level lists. This
+	 * iterator is generally returned by a call to find_match() on successes.
+	 *
+	 * @return: a Trade object storing the incoming order, the existing order, the shares transacted, and the transaction price.
+	 */
+	[[nodiscard]] static Trade fill_order(Order &order, std::list<Order>::iterator &it);
+
+	/* When an order is completed, this function is used to move the Order object to the <historical_orders>. This only handles orders that never
+	 * rested in any other map (<asks>, <bids>, <resting_orders>). For those orders, use the overloaded function which takes an iterator.
+	 *
+	 * @param order: the incoming order that was just filled.
+	 */
+	static void move_completed_order(Order &order);
+
+	static void move_completed_order(std::list<Order>::iterator it);
 
 public:
 	explicit OrderBook(std::string ticker);
