@@ -20,9 +20,14 @@ class Trade {
 	Id sell_order_id;
 
 	Share shares;
+	Price price;
 
 public:
-	Trade(Id buy_order_id, Id sell_order_id, Share shares);
+	Trade(Id buy_order_id, Id sell_order_id, Share shares, Price price);
+
+	[[nodiscard]] Id getId() const;
+	[[nodiscard]] Share getShare() const;
+	[[nodiscard]] Price getPrice() const;
 };
 
 #endif //TRADE_H
