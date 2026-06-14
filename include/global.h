@@ -20,7 +20,6 @@ enum class ORDER_SIDE_T {
 };
 
 enum class ORDER_STATE_T {
-	INITIAL,
 	OPEN,
 	PARTIAL,
 	FILLED,
