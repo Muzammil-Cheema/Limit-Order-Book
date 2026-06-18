@@ -18,6 +18,8 @@
 class OrderBook {
 	std::string ticker;
 
+	std::unordered_map<Id, Trade> trades;
+
 	/*
 	 * Maps order IDs to an iterator of the existing Order object stored in either the <asks> or <bids> list.
 	 * Only holds resting orders so we can support constant cancellation and querying.
@@ -63,7 +65,7 @@ class OrderBook {
 	 * corresponding map and price level list.
 	 */
 	template <typename TPriceLevelMap>
-	static std::expected<std::list<Order>::iterator, ORDER_BOOK_ERROR_CODE> find_match(const Order& order,
+	[[nodiscard]] static std::expected<std::list<Order>::iterator, ORDER_BOOK_ERROR_CODE> find_match(const Order& order,
 	TPriceLevelMap& map);
 
 	/* When a matching order is found (iterator), this function is called to update the incoming order and the
@@ -76,16 +78,8 @@ class OrderBook {
 	 *
 	 * @return: a Trade object storing the incoming order, the existing order, the shares transacted, and the transaction price.
 	 */
-	[[nodiscard]] static Trade fill_order(Order &order, std::list<Order>::iterator &it);
-
-	/* When an order is completed, this function is used to move the Order object to the <historical_orders>. This only handles orders that never
-	 * rested in any other map (<asks>, <bids>, <resting_orders>). For those orders, use the overloaded function which takes an iterator.
-	 *
-	 * @param order: the incoming order that was just filled.
-	 */
-	static void move_completed_order(Order &order);
-
-	static void move_completed_order(std::list<Order>::iterator it);
+	[[nodiscard]] std::expected<bool, ORDER_BOOK_ERROR_CODE> fill_order(Order
+	&order, std::list<Order>::iterator it);
 
 public:
 	explicit OrderBook(std::string ticker);
