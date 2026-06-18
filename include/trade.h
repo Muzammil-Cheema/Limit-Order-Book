@@ -8,7 +8,7 @@
 #include <chrono>
 #include "global.h"
 
-static uint64_t trade_counter = 1000;
+static uint64_t trade_counter = 1000000;
 
 class Trade {
 	Id id;
