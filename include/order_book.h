@@ -81,6 +81,8 @@ class OrderBook {
 	[[nodiscard]] std::expected<bool, ORDER_BOOK_ERROR_CODE> fill_order(Order
 	&order, std::list<Order>::iterator it);
 
+	[[nodiscard]] std::expected<bool, ORDER_BOOK_ERROR_CODE> find_match_and_fill_order(Order& order);
+
 public:
 	explicit OrderBook(std::string ticker);
 

@@ -76,6 +76,32 @@ std::expected<bool, ORDER_BOOK_ERROR_CODE> OrderBook::fill_order(Order &order, c
 }
 
 
+std::expected<bool, ORDER_BOOK_ERROR_CODE> OrderBook::find_match_and_fill_order(Order& order) {
+	bool filled = false;
+
+	while (!filled) {
+		std::expected<std::list<Order>::iterator, ORDER_BOOK_ERROR_CODE> res_find_match;
+		if (order.get_side() == ORDER_SIDE_T::BUY)
+			res_find_match = find_match(order, asks);
+		else
+			res_find_match = find_match(order, bids);
+
+		if (!res_find_match) {
+			if (res_find_match.error() == ORDER_BOOK_ERROR_CODE::NO_MATCHING_ORDER)
+				return false;
+			return std::unexpected(res_find_match.error());
+		}
+		auto match = res_find_match.value();
+
+		auto res_fill_order = fill_order(order, match);
+		if (!res_fill_order)
+			return std::unexpected(res_fill_order.error());
+		filled = res_fill_order.value();
+	}
+
+	return filled;
+}
+
 // ===========================================================
 // ======================= API ===============================
 // ===========================================================
@@ -85,57 +111,64 @@ OrderBook::OrderBook(std::string ticker) : ticker(std::move(ticker)) {}
 
 
 std::expected<ORDER_STATE_T, ORDER_BOOK_ERROR_CODE> OrderBook::placeOrder(const ORDER_SIDE_T side, const ORDER_TYPE_T type,
-const Share shares, const std::optional<Price> price) {
+const Share shares, const std::optional<Price> price)
+{
 	//Validate that price exists for LIMIT orders only and not for MARKET orders
 	if ( (!price && type == ORDER_TYPE_T::LIMIT) || (price && type == ORDER_TYPE_T::MARKET) ) {
 		return std::unexpected(ORDER_BOOK_ERROR_CODE::INVALID_INPUT);
 	}
 
-	if (type == ORDER_TYPE_T::MARKET) {
-		Order order(side, type, shares);
-		bool filled = false;
+	Order order = type == ORDER_TYPE_T::LIMIT ? Order(side, type, shares, price.value()) : Order(side, type, shares);
 
-		while (!filled) {
-			std::expected<std::list<Order>::iterator, ORDER_BOOK_ERROR_CODE> res_find_match;
-			if (order.get_side() == ORDER_SIDE_T::BUY)
-				res_find_match = find_match(order, asks);
-			else
-				res_find_match = find_match(order, bids);
-
-			if (!res_find_match) {
-				if (res_find_match.error() == ORDER_BOOK_ERROR_CODE::NO_MATCHING_ORDER)
-					break;
-				return std::unexpected(res_find_match.error());
-			}
-			auto match = res_find_match.value();
-
-			auto res_fill_order = fill_order(order, match);
-			if (!res_fill_order)
-				return std::unexpected(res_fill_order.error());
-			filled = res_fill_order.value();
-		}
-
-		if (!filled) {
-			order.cancel();
-			if (order.get_original_shares() != order.get_remaining_shares())
-				return ORDER_STATE_T::PARTIAL;
-			return ORDER_STATE_T::CANCELLED;
-		}
-
+	auto res_match_and_fill = find_match_and_fill_order(order);
+	if (!res_match_and_fill)
+		return std::unexpected(res_match_and_fill.error());
+	if (res_match_and_fill.value())
 		return ORDER_STATE_T::FILLED;
+
+	if (type == ORDER_TYPE_T::MARKET) {
+		order.cancel();
+		historical_orders.emplace(order.get_id(), order);
+
+		if (order.get_original_shares() != order.get_remaining_shares())
+			return ORDER_STATE_T::PARTIAL;
+		return ORDER_STATE_T::CANCELLED;
 	}
 	if (type == ORDER_TYPE_T::LIMIT) {
-		//TODO Implement matching and filling logic for LIMIT orders
-		Order order(side, type, shares, price.value());
-		// auto res = find_match(order, order.get_side() == ORDER_SIDE_T::BUY ? asks : bids);
+		historical_orders.emplace(order.get_id(), order);
+
+		if (order.get_side() == ORDER_SIDE_T::BUY) {
+			bids[order.get_price()].push_back(order);
+			resting_orders[order.get_id()] = std::prev(bids[order.get_price()].end());
+		}
+		else {
+			asks[order.get_price()].push_back(order);
+			resting_orders[order.get_id()] = std::prev(asks[order.get_price()].end());
+		}
+
+		if (order.get_original_shares() != order.get_remaining_shares())
+			return ORDER_STATE_T::PARTIAL;
+		return ORDER_STATE_T::OPEN;
 	}
 
-	return ORDER_STATE_T::FILLED;
+	return std::unexpected(ORDER_BOOK_ERROR_CODE::UNKNOWN_ERROR);
 }
 
 
 bool OrderBook::cancelOrder(const Id order_id) {
-	return false;
+	if (!resting_orders.contains(order_id))
+		return false;
+
+	Order &order = *(resting_orders[order_id]);
+	historical_orders.emplace(order.get_id(), order);
+
+	if (order.get_side() == ORDER_SIDE_T::BUY)
+		bids[order.get_price()].erase(resting_orders[order_id]);
+	else
+		asks[order.get_price()].erase(resting_orders[order_id]);
+
+	resting_orders.erase(order_id);
+	return true;
 }
 
 
