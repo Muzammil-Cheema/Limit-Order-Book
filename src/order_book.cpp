@@ -117,6 +117,8 @@ const Share shares, const std::optional<Price> price)
 	if ( (!price && type == ORDER_TYPE_T::LIMIT) || (price && type == ORDER_TYPE_T::MARKET) ) {
 		return std::unexpected(ORDER_BOOK_ERROR_CODE::INVALID_INPUT);
 	}
+	if (shares == 0 || (price && price.value == 0))
+		return std::unexpected(ORDER_BOOK_ERROR_CODE::INVALID_INPUT);
 
 	Order order = type == ORDER_TYPE_T::LIMIT ? Order(side, type, shares, price.value()) : Order(side, type, shares);
 
@@ -135,8 +137,6 @@ const Share shares, const std::optional<Price> price)
 		return ORDER_STATE_T::CANCELLED;
 	}
 	if (type == ORDER_TYPE_T::LIMIT) {
-		historical_orders.emplace(order.get_id(), order);
-
 		if (order.get_side() == ORDER_SIDE_T::BUY) {
 			bids[order.get_price()].push_back(order);
 			resting_orders[order.get_id()] = std::prev(bids[order.get_price()].end());
@@ -160,12 +160,19 @@ bool OrderBook::cancelOrder(const Id order_id) {
 		return false;
 
 	Order &order = *(resting_orders[order_id]);
+	order.cancel();
 	historical_orders.emplace(order.get_id(), order);
 
-	if (order.get_side() == ORDER_SIDE_T::BUY)
+	if (order.get_side() == ORDER_SIDE_T::BUY) {
 		bids[order.get_price()].erase(resting_orders[order_id]);
-	else
+		if (bids[order.get_price()].empty())
+			bids.erase(order.get_price());
+	}
+	else {
 		asks[order.get_price()].erase(resting_orders[order_id]);
+		if (asks[order.get_price()].empty())
+			asks.erase(order.get_price());
+	}
 
 	resting_orders.erase(order_id);
 	return true;
