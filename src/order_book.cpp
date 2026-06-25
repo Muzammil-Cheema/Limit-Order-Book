@@ -37,7 +37,6 @@ std::expected<bool, ORDER_BOOK_ERROR_CODE> OrderBook::fill_order(Order &order, c
 	order.decrementShares(trade_shares);
 	it->decrementShares(trade_shares);
 
-	// TODO add new Trade into OrderBook's Trades container
 	const Trade trade {
 		order.get_side() == ORDER_SIDE_T::BUY ? order.get_id(): it->get_id(),
 		order.get_side() == ORDER_SIDE_T::SELL ? order.get_id(): it->get_id(),
@@ -59,6 +58,18 @@ std::expected<bool, ORDER_BOOK_ERROR_CODE> OrderBook::fill_order(Order &order, c
 			return std::unexpected(ORDER_BOOK_ERROR_CODE::UNKNOWN_ERROR);
 
 		resting_orders.erase(it->get_id());
+
+		//Remove resting order from either bids or asks
+		if (it->get_side() == ORDER_SIDE_T::BUY) {
+			bids[trade_price].pop_front();
+			if (bids[trade_price].empty())
+				bids.erase(trade_price);
+		}
+		else if (it->get_side() == ORDER_SIDE_T::SELL) {
+			asks[trade_price].pop_front();
+			if (asks[trade_price].empty())
+				asks.erase(trade_price);
+		}
 	}
 
 	return order.get_status() == ORDER_STATE_T::FILLED;
@@ -80,49 +91,43 @@ const Share shares, const std::optional<Price> price) {
 		return std::unexpected(ORDER_BOOK_ERROR_CODE::INVALID_INPUT);
 	}
 
-	// TODO use a while loop over fill_order() until it returns true after initially using find_match to get the first resting order to fill.
 	if (type == ORDER_TYPE_T::MARKET) {
-
 		Order order(side, type, shares);
-		auto res_find_match = find_match(order, order.get_side() == ORDER_SIDE_T::BUY ? asks : bids);
-		if (!res_find_match) return std::unexpected(res_find_match.error());
-		auto existing_orders_iter = res_find_match.value();
-		auto res_fill_order = fill_order(order, existing_orders_iter);
-		if (!res_fill_order) return std::unexpected(res_fill_order.error());
+		bool filled = false;
 
-		/*TODO instead of using ++existing_orders_iter to find the next match, create an overloaded find_match() that accepts an iterator and
-		 * returns the correct next order match based on the order type (MARKET, LIMIT)
-		 * Remember that this branch is for MARKET orders
-		 * while (!filled) {
-		 * next_iterator = find_match(current_iterator);
-		 * if (next_iterator != current_iterator){
-		 * // cleanup current_iterator
-		 * }
-		 * if (next_iterator == either_map_or_list.end())
-		 * // No orders remaining to match
-		 * // cancel remainder
-		 * break;
-		 * }
-		 * current_iterator = next_iterator;
-		 * filled = fill_order(order, current_iterator);
-		 */
-		while (!res_fill_order.value()) {
-			auto next_iter = ++existing_orders_iter;
-			--existing_orders_iter;
-			if (existing_orders_iter->get_side() == ORDER_SIDE_T::BUY)
-				bids.erase(existing_orders_iter->get_id());
+		while (!filled) {
+			std::expected<std::list<Order>::iterator, ORDER_BOOK_ERROR_CODE> res_find_match;
+			if (order.get_side() == ORDER_SIDE_T::BUY)
+				res_find_match = find_match(order, asks);
 			else
-				asks.erase(existing_orders_iter->get_id());
+				res_find_match = find_match(order, bids);
 
-			res_fill_order = fill_order(order, next_iter);
+			if (!res_find_match) {
+				if (res_find_match.error() == ORDER_BOOK_ERROR_CODE::NO_MATCHING_ORDER)
+					break;
+				return std::unexpected(res_find_match.error());
+			}
+			auto match = res_find_match.value();
+
+			auto res_fill_order = fill_order(order, match);
+			if (!res_fill_order)
+				return std::unexpected(res_fill_order.error());
+			filled = res_fill_order.value();
 		}
 
+		if (!filled) {
+			order.cancel();
+			if (order.get_original_shares() != order.get_remaining_shares())
+				return ORDER_STATE_T::PARTIAL;
+			return ORDER_STATE_T::CANCELLED;
+		}
 
+		return ORDER_STATE_T::FILLED;
 	}
-	else if (type == ORDER_TYPE_T::LIMIT) {
+	if (type == ORDER_TYPE_T::LIMIT) {
+		//TODO Implement matching and filling logic for LIMIT orders
 		Order order(side, type, shares, price.value());
-		auto res = find_match(order, order.get_side() == ORDER_SIDE_T::BUY ? asks : bids);
-
+		// auto res = find_match(order, order.get_side() == ORDER_SIDE_T::BUY ? asks : bids);
 	}
 
 	return ORDER_STATE_T::FILLED;
