@@ -5,19 +5,19 @@
 #ifndef ORDER_H
 #define ORDER_H
 
-#include <string>
 #include <chrono>
 #include "global.h"
 
-static uint64_t order_counter = 1000000;
+//TODO refactor order_counter to be a thread-safe, seeded generator function
+// static uint64_t order_counter = 1000000;
 
 class Order {
-	Id id = ++order_counter;
+	Id id = generateId();
 
 	std::chrono::steady_clock::time_point arrival_time;
-	std::chrono::steady_clock::time_point fill_time;
 	std::chrono::system_clock::time_point arrival_time_system;
-	std::chrono::system_clock::time_point fill_time_system;
+	std::optional<std::chrono::steady_clock::time_point> complete_time;
+	std::optional<std::chrono::system_clock::time_point> complete_time_system;
 
 	ORDER_SIDE_T side;
 	ORDER_TYPE_T type;
@@ -28,10 +28,20 @@ class Order {
 
 	ORDER_STATE_T status = ORDER_STATE_T::OPEN;
 
+	[[nodiscard]] static Id generateId() {
+		static Id id = 1000000;
+		//TODO mutex lock
+		++id;
+		//TODO mutex unlock
+		return id;
+	}
+
 public:
 	// Order();
 	Order(ORDER_SIDE_T side, ORDER_TYPE_T type, Share shares, Price price);
 	Order(ORDER_SIDE_T side, ORDER_TYPE_T type, Share shares);
+
+	Order& operator=(const Order&) = delete;
 
 	[[nodiscard]] Id get_id() const;
 	[[nodiscard]] ORDER_SIDE_T get_side() const;
@@ -40,6 +50,10 @@ public:
 	[[nodiscard]] Share get_remaining_shares() const;
 	[[nodiscard]] Price get_price() const;
 	[[nodiscard]] ORDER_STATE_T get_status() const;
+	template <typename TTimePoint>
+	[[nodiscard]] std::array<TTimePoint, 2> get_arrival_time() const;
+	template <typename TTimePoint>
+	[[nodiscard]] std::optional<std::array<TTimePoint, 2>> get_complete_time() const;
 
 	/*
 	 * Decrement remaining shares from order and updates status.
@@ -58,20 +72,16 @@ public:
 	 */
 	bool cancel();
 
-	// /*
-	//  * Reject orders that cannot be filled or rested (all MARKET orders when there are no corresponding resting orders.
-	// */
-	// bool reject();
-
 	/*
 	 * Run when Order is added to OrderBook.
 	 */
 	void updateArrivalTime();
 
 	/*
-	 * Run when Order is filled and removed from OrderBook
+	 * Run when Order is moved into historical orders or when the program terminates gracefully. The order can be
+	 * CANCELLED or FILLED at this point.
 	 */
-	void updateFillTime();
+	void updateCompleteTime();
 
 };
 
