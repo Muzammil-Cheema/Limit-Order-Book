@@ -40,6 +40,18 @@ ORDER_STATE_T Order::get_status() const {
 	return status;
 }
 
+template <typename TTimePoint>
+std::array<TTimePoint, 2> Order::get_arrival_time() const {
+	return std::array<TTimePoint, 2>{arrival_time, arrival_time_system};
+}
+
+template <typename TTimePoint>
+std::optional<std::array<TTimePoint, 2>> Order::get_complete_time() const {
+	if (complete_time.has_value() && complete_time_system.has_value())
+		return std::array<TTimePoint, 2>{complete_time, complete_time_system};
+	return std::nullopt;
+}
+
 bool Order::decrementShares(const uint64_t shares) {
 	if (shares > remaining_shares) [[unlikely]]
 		return false;
@@ -60,20 +72,12 @@ bool Order::cancel() {
 	return false;
 }
 
-// bool Order::reject() {
-// 	if (status == ORDER_STATE_T::ACTIVE || status == ORDER_STATE_T::REJECTED) {
-// 		this->status = ORDER_STATE_T::REJECTED;
-// 		return true;
-// 	}
-// 	return false;
-// }
-
 void Order::updateArrivalTime() {
 	arrival_time = std::chrono::steady_clock::now();
 	arrival_time_system = std::chrono::system_clock::now();
 }
 
-void Order::updateFillTime() {
-	fill_time = std::chrono::steady_clock::now();
-	fill_time_system = std::chrono::system_clock::now();
+void Order::updateCompleteTime() {
+	complete_time = std::chrono::steady_clock::now();
+	complete_time_system = std::chrono::system_clock::now();
 }
