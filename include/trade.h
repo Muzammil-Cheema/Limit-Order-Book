@@ -8,9 +8,6 @@
 #include <chrono>
 #include "global.h"
 
-//TODO refactor trade_counter to be a thread-safe, seeded generator function
-// static uint64_t trade_counter = 1000000;
-
 class Trade {
 	Id id = generateId();
 

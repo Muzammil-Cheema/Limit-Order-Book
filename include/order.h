@@ -8,16 +8,13 @@
 #include <chrono>
 #include "global.h"
 
-//TODO refactor order_counter to be a thread-safe, seeded generator function
-// static uint64_t order_counter = 1000000;
-
 class Order {
 	Id id = generateId();
 
 	std::chrono::steady_clock::time_point arrival_time;
 	std::chrono::system_clock::time_point arrival_time_system;
-	std::optional<std::chrono::steady_clock::time_point> complete_time;
-	std::optional<std::chrono::system_clock::time_point> complete_time_system;
+	std::optional<std::chrono::steady_clock::time_point> complete_time = std::nullopt;
+	std::optional<std::chrono::system_clock::time_point> complete_time_system = std::nullopt;
 
 	ORDER_SIDE_T side;
 	ORDER_TYPE_T type;
@@ -37,7 +34,6 @@ class Order {
 	}
 
 public:
-	// Order();
 	Order(ORDER_SIDE_T side, ORDER_TYPE_T type, Share shares, Price price);
 	Order(ORDER_SIDE_T side, ORDER_TYPE_T type, Share shares);
 
