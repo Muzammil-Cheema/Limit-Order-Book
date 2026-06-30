@@ -11,8 +11,8 @@
 class Trade {
 	Id id = generateId();
 
-	std::chrono::steady_clock::time_point trade_time;
-	std::chrono::system_clock::time_point trade_time_system;
+	std::chrono::steady_clock::time_point trade_time = std::chrono::steady_clock::now();
+	std::chrono::system_clock::time_point trade_time_system = std::chrono::system_clock::now();
 
 	Id buy_order_id;
 	Id sell_order_id;

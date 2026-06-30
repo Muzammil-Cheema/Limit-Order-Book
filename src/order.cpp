@@ -64,15 +64,11 @@ bool Order::decrementShares(const uint64_t shares) {
 
 bool Order::cancel() {
 	if (status == ORDER_STATE_T::OPEN || status == ORDER_STATE_T::CANCELLED || status == ORDER_STATE_T::PARTIAL) {
-		this->status = ORDER_STATE_T::CANCELLED;
+		status = ORDER_STATE_T::CANCELLED;
+		updateCompleteTime();
 		return true;
 	}
 	return false;
-}
-
-void Order::updateArrivalTime() {
-	arrival_time = std::chrono::steady_clock::now();
-	arrival_time_system = std::chrono::system_clock::now();
 }
 
 void Order::updateCompleteTime() {

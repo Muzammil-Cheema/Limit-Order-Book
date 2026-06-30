@@ -48,6 +48,7 @@ std::expected<bool, ORDER_BOOK_ERROR_CODE> OrderBook::fill_order(Order &order, c
 	auto [trade_iter, inserted] = trades.emplace(trade.getId(), trade);
 	if (!inserted)
 		return std::unexpected(ORDER_BOOK_ERROR_CODE::UNKNOWN_ERROR);
+
 	if (order.get_status() == ORDER_STATE_T::FILLED) {
 		if (auto [it, inserted] = historical_orders.emplace(order.get_id(), order); !inserted)
 			return std::unexpected(ORDER_BOOK_ERROR_CODE::UNKNOWN_ERROR);
@@ -110,7 +111,7 @@ std::expected<bool, ORDER_BOOK_ERROR_CODE> OrderBook::find_match_and_fill_order(
 OrderBook::OrderBook(std::string ticker) : ticker(std::move(ticker)) {}
 
 
-//TODO add arrival and fill time updates for orders
+//TODO add arrival and complete time updates for orders
 std::expected<ORDER_STATE_T, ORDER_BOOK_ERROR_CODE> OrderBook::placeOrder(const ORDER_SIDE_T side, const ORDER_TYPE_T type,
 const Share shares, const std::optional<Price> price)
 {
@@ -126,8 +127,10 @@ const Share shares, const std::optional<Price> price)
 	auto res_match_and_fill = find_match_and_fill_order(order);
 	if (!res_match_and_fill)
 		return std::unexpected(res_match_and_fill.error());
-	if (res_match_and_fill.value())
+	if (res_match_and_fill.value()) {
+		order.updateCompleteTime();
 		return ORDER_STATE_T::FILLED;
+	}
 
 	if (type == ORDER_TYPE_T::MARKET) {
 		order.cancel();
