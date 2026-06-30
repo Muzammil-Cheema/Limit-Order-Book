@@ -8,10 +8,11 @@
 #include <chrono>
 #include "global.h"
 
-static uint64_t trade_counter = 1000000;
+//TODO refactor trade_counter to be a thread-safe, seeded generator function
+// static uint64_t trade_counter = 1000000;
 
 class Trade {
-	Id id;
+	Id id = generateId();
 
 	std::chrono::steady_clock::time_point trade_time;
 	std::chrono::system_clock::time_point trade_time_system;
@@ -22,12 +23,25 @@ class Trade {
 	Share shares;
 	Price price;
 
+	[[nodiscard]] static Id generateId() {
+		static Id id = 1000000;
+		//TODO mutex lock
+		++id;
+		//TODO mutex unlock
+		return id;
+	}
+
 public:
 	Trade(Id buy_order_id, Id sell_order_id, Share shares, Price price);
 
 	[[nodiscard]] Id getId() const;
 	[[nodiscard]] Share getShare() const;
 	[[nodiscard]] Price getPrice() const;
+	[[nodiscard]] Id getBuyOrderId() const;
+	[[nodiscard]] Id getSellOrderId() const;
+	template <typename TTimePoint>
+	[[nodiscard]] std::array<TTimePoint, 2> get_trade_time() const;
+
 };
 
 #endif //TRADE_H
