@@ -111,7 +111,6 @@ std::expected<bool, ORDER_BOOK_ERROR_CODE> OrderBook::find_match_and_fill_order(
 OrderBook::OrderBook(std::string ticker) : ticker(std::move(ticker)) {}
 
 
-//TODO add arrival and complete time updates for orders
 std::expected<ORDER_STATE_T, ORDER_BOOK_ERROR_CODE> OrderBook::placeOrder(const ORDER_SIDE_T side, const ORDER_TYPE_T type,
 const Share shares, const std::optional<Price> price)
 {

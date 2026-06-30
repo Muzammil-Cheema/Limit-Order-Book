@@ -27,10 +27,7 @@ class Order {
 
 	[[nodiscard]] static Id generateId() {
 		static Id id = 1000000;
-		//TODO mutex lock
-		++id;
-		//TODO mutex unlock
-		return id;
+		return ++id;
 	}
 
 public:
