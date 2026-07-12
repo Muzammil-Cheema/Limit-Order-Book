@@ -11,8 +11,7 @@
 class Trade {
 	Id id = generateId();
 
-	std::chrono::steady_clock::time_point trade_time = std::chrono::steady_clock::now();
-	std::chrono::system_clock::time_point trade_time_system = std::chrono::system_clock::now();
+	TimeStamp trade_time {std::chrono::steady_clock::now(), std::chrono::system_clock::now()};
 
 	Id buy_order_id;
 	Id sell_order_id;
@@ -33,8 +32,7 @@ public:
 	[[nodiscard]] Price getPrice() const;
 	[[nodiscard]] Id getBuyOrderId() const;
 	[[nodiscard]] Id getSellOrderId() const;
-	template <typename TTimePoint>
-	[[nodiscard]] std::array<TTimePoint, 2> get_trade_time() const;
+	[[nodiscard]] TimeStamp get_trade_time() const;
 
 };
 
