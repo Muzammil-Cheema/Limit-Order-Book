@@ -5,6 +5,8 @@
 #ifndef GLOBAL_H
 #define GLOBAL_H
 
+#include <chrono>
+
 using Id = uint64_t;
 using Share = uint64_t;
 using Price = uint64_t;
@@ -30,6 +32,11 @@ enum class ORDER_BOOK_ERROR_CODE {
 	INVALID_INPUT,
 	NO_MATCHING_ORDER,
 	UNKNOWN_ERROR
+};
+
+struct TimeStamp {
+	std::chrono::steady_clock::time_point steady_time;
+	std::chrono::system_clock::time_point system_time;
 };
 
 
