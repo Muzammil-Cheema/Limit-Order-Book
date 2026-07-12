@@ -11,10 +11,8 @@
 class Order {
 	Id id = generateId();
 
-	std::chrono::steady_clock::time_point arrival_time = std::chrono::steady_clock::now();
-	std::chrono::system_clock::time_point arrival_time_system = std::chrono::system_clock::now();
-	std::optional<std::chrono::steady_clock::time_point> complete_time = std::nullopt;
-	std::optional<std::chrono::system_clock::time_point> complete_time_system = std::nullopt;
+	TimeStamp arrival {std::chrono::steady_clock::now(), std::chrono::system_clock::now()};
+	std::optional<TimeStamp> completion = std::nullopt;
 
 	ORDER_SIDE_T side;
 	ORDER_TYPE_T type;
@@ -30,6 +28,12 @@ class Order {
 		return ++id;
 	}
 
+	/*
+	 * Run when Order is moved into historical orders or when the program terminates gracefully. The order can be
+	 * CANCELLED or FILLED at this point.
+	 */
+	void updateCompleteTime();
+
 public:
 	Order(ORDER_SIDE_T side, ORDER_TYPE_T type, Share shares, Price price);
 	Order(ORDER_SIDE_T side, ORDER_TYPE_T type, Share shares);
@@ -43,10 +47,8 @@ public:
 	[[nodiscard]] Share get_remaining_shares() const;
 	[[nodiscard]] Price get_price() const;
 	[[nodiscard]] ORDER_STATE_T get_status() const;
-	template <typename TTimePoint>
-	[[nodiscard]] std::array<TTimePoint, 2> get_arrival_time() const;
-	template <typename TTimePoint>
-	[[nodiscard]] std::optional<std::array<TTimePoint, 2>> get_complete_time() const;
+	[[nodiscard]] TimeStamp get_arrival_time() const;
+	[[nodiscard]] std::optional<TimeStamp> get_completion_time() const;
 
 	/*
 	 * Decrement remaining shares from order and updates status.
@@ -64,13 +66,6 @@ public:
 	 * @return: true if the trade was cancelled or false otherwise.
 	 */
 	bool cancel();
-
-	/*
-	 * Run when Order is moved into historical orders or when the program terminates gracefully. The order can be
-	 * CANCELLED or FILLED at this point.
-	 */
-	void updateCompleteTime();
-
 };
 
 #endif //ORDER_H

@@ -110,7 +110,6 @@ std::expected<bool, ORDER_BOOK_ERROR_CODE> OrderBook::find_match_and_fill_order(
 
 OrderBook::OrderBook(std::string ticker) : ticker(std::move(ticker)) {}
 
-
 std::expected<ORDER_STATE_T, ORDER_BOOK_ERROR_CODE> OrderBook::placeOrder(const ORDER_SIDE_T side, const ORDER_TYPE_T type,
 const Share shares, const std::optional<Price> price)
 {
@@ -126,10 +125,8 @@ const Share shares, const std::optional<Price> price)
 	auto res_match_and_fill = find_match_and_fill_order(order);
 	if (!res_match_and_fill)
 		return std::unexpected(res_match_and_fill.error());
-	if (res_match_and_fill.value()) {
-		order.updateCompleteTime();
+	if (res_match_and_fill.value())
 		return ORDER_STATE_T::FILLED;
-	}
 
 	if (type == ORDER_TYPE_T::MARKET) {
 		order.cancel();
