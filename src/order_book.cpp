@@ -19,8 +19,8 @@ std::expected<std::list<Order>::iterator, ORDER_BOOK_ERROR_CODE> OrderBook::find
 		return map.begin()->second.begin();
 
 	if (order.get_type() == ORDER_TYPE_T::LIMIT) {
-		if ( (order.get_side() == ORDER_SIDE_T::BUY && map.begin()->first <= order.get_price()) ||
-			(order.get_side() == ORDER_SIDE_T::SELL && map.begin()->first >= order.get_price()) )
+		if ( (order.get_side() == ORDER_SIDE_T::BUY && map.begin()->first <= order.get_price().value()) ||
+			(order.get_side() == ORDER_SIDE_T::SELL && map.begin()->first >= order.get_price().value()) )
 			return map.begin()->second.begin();
 
 		return std::unexpected(ORDER_BOOK_ERROR_CODE::NO_MATCHING_ORDER);
@@ -32,7 +32,7 @@ std::expected<std::list<Order>::iterator, ORDER_BOOK_ERROR_CODE> OrderBook::find
 
 std::expected<bool, ORDER_BOOK_ERROR_CODE> OrderBook::fill_order(Order &order, const std::list<Order>::iterator it) {
 	const Share trade_shares = order.get_remaining_shares() > it->get_remaining_shares() ? it->get_remaining_shares() : order.get_remaining_shares();
-	const Price trade_price = it->get_price();
+	const Price trade_price = it->get_price().value();
 
 	order.decrementShares(trade_shares);
 	it->decrementShares(trade_shares);
@@ -138,12 +138,12 @@ const Share shares, const std::optional<Price> price)
 	}
 	if (type == ORDER_TYPE_T::LIMIT) {
 		if (order.get_side() == ORDER_SIDE_T::BUY) {
-			bids[order.get_price()].push_back(order);
-			resting_orders[order.get_id()] = std::prev(bids[order.get_price()].end());
+			bids[order.get_price().value()].push_back(order);
+			resting_orders[order.get_id()] = std::prev(bids[order.get_price().value()].end());
 		}
 		else {
-			asks[order.get_price()].push_back(order);
-			resting_orders[order.get_id()] = std::prev(asks[order.get_price()].end());
+			asks[order.get_price().value()].push_back(order);
+			resting_orders[order.get_id()] = std::prev(asks[order.get_price().value()].end());
 		}
 
 		if (order.get_original_shares() != order.get_remaining_shares())
@@ -160,7 +160,7 @@ bool OrderBook::cancelOrder(const Id order_id) {
 		return false;
 
 	Order &order = *(resting_orders[order_id]);
-	Price price = order.get_price();
+	const Price price = order.get_price().value();
 	order.cancel();
 	historical_orders.emplace(order.get_id(), order);
 

@@ -41,8 +41,10 @@ Share Order::get_remaining_shares() const {
 	return remaining_shares;
 }
 
-Price Order::get_price() const {
-	return price.value();
+std::optional<Price> Order::get_price() const {
+	if (price)
+		return price.value();
+	return std::nullopt;
 }
 
 ORDER_STATE_T Order::get_status() const {
@@ -61,6 +63,8 @@ std::optional<TimeStamp> Order::get_completion_time() const {
 
 bool Order::decrementShares(const uint64_t shares) {
 	if (shares > remaining_shares) [[unlikely]]
+		return false;
+	if (status == ORDER_STATE_T::CANCELLED || status == ORDER_STATE_T::FILLED) [[unlikely]]
 		return false;
 
 	remaining_shares -= shares;

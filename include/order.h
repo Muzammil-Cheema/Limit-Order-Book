@@ -24,7 +24,7 @@ class Order {
 	ORDER_STATE_T status = ORDER_STATE_T::OPEN;
 
 	[[nodiscard]] static Id generateId() {
-		static Id id = 1000000;
+		static Id id = 999999;
 		return ++id;
 	}
 
@@ -35,7 +35,9 @@ class Order {
 	void updateCompleteTime();
 
 public:
+	// Use when price is required (LIMIT orders)
 	Order(ORDER_SIDE_T side, ORDER_TYPE_T type, Share shares, Price price);
+	// Use when price is not known in advance (MARKET orders)
 	Order(ORDER_SIDE_T side, ORDER_TYPE_T type, Share shares);
 
 	Order& operator=(const Order&) = delete;
@@ -45,7 +47,7 @@ public:
 	[[nodiscard]] ORDER_TYPE_T get_type() const;
 	[[nodiscard]] Share get_original_shares() const;
 	[[nodiscard]] Share get_remaining_shares() const;
-	[[nodiscard]] Price get_price() const;
+	[[nodiscard]] std::optional<Price> get_price() const;
 	[[nodiscard]] ORDER_STATE_T get_status() const;
 	[[nodiscard]] TimeStamp get_arrival_time() const;
 	[[nodiscard]] std::optional<TimeStamp> get_completion_time() const;
